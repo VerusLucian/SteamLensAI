@@ -225,12 +225,25 @@ class SteamStoreAPI:
                 return []
             
             results = []
-            for item in response['items'][:max_results]:
+            for item in response['items'][:max_results * 2]:  # Get more results to filter
                 try:
                     # Filter to games only - Steam API returns 'app' for games
                     if item.get('type') in ['app', 'dlc']:
+                        # Additional filtering to exclude soundtracks and non-game content
+                        name = item.get('name', '').lower()
+                        if any(keyword in name for keyword in [
+                            'soundtrack', 'ost', 'original soundtrack', 'music',
+                            'artbook', 'art book', 'wallpaper', 'avatar',
+                            'theme pack', 'cosmetic', 'skin pack'
+                        ]):
+                            continue
+                        
                         result = GameSearchResult.from_search_data(item)
                         results.append(result)
+                        
+                        # Stop when we have enough actual games
+                        if len(results) >= max_results:
+                            break
                 except Exception as e:
                     logger.warning(f"Error parsing search result: {e}")
                     continue
