@@ -47,7 +47,7 @@ class Config:
             
             # Ollama settings
             embed_model=os.getenv("OLLAMA_EMBED_MODEL", "bge-m3"),
-            llm_model=os.getenv("OLLAMA_LLM_MODEL", "deepseek-r1:14b"),
+            llm_model=os.getenv("OLLAMA_LLM_MODEL", "gemma2:12b"),
             ollama_embed_url=os.getenv("OLLAMA_EMBED_URL", "http://localhost:11434/api/embed"),
             ollama_llm_url=os.getenv("OLLAMA_LLM_URL", "http://localhost:11434/api/generate"),
             ollama_timeout_embed=int(os.getenv("OLLAMA_TIMEOUT_EMBED", "120")),
