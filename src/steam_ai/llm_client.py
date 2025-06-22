@@ -38,6 +38,7 @@ class PromptContext:
     question: str
     app_name: Optional[str] = None
     additional_context: Optional[Dict[str, Any]] = None
+    language: str = "en"
 
 
 class PromptManager:
@@ -45,17 +46,22 @@ class PromptManager:
     
     def __init__(self, config: Config):
         self.config = config
+        self.english_templates = {}
+        self.polish_templates = {}
         self.templates = self._load_templates()
     
     def _load_templates(self) -> Dict[str, str]:
         """Load prompt templates."""
-        # Get language setting for templates
-        language = self.config.app_language.lower()
+        # Load both English and Polish templates
+        self.english_templates = self._get_english_templates()
+        self.polish_templates = self._get_polish_templates()
         
+        # Default to configured language
+        language = self.config.app_language.lower()
         if language == "pl":
-            return self._get_polish_templates()
+            return self.polish_templates
         else:
-            return self._get_english_templates()
+            return self.english_templates
     
     def _get_polish_templates(self) -> Dict[str, str]:
         """Polish prompt templates."""
@@ -260,11 +266,17 @@ Recommendation:"""
         Returns:
             str: Generated prompt
         """
-        # Prepare context text
+        # Prepare context text without review numbers
         context_text = self._prepare_context_text(context.reviews, max_context_length)
         
+        # Select templates based on language
+        if context.language.lower() == "pl":
+            templates = self.polish_templates
+        else:
+            templates = self.english_templates
+        
         # Get template
-        template_str = self.templates.get(template.value, self.templates[PromptTemplate.BASIC_QA.value])
+        template_str = templates.get(template.value, templates[PromptTemplate.BASIC_QA.value])
         
         # Format template
         format_kwargs = {
@@ -298,8 +310,8 @@ Recommendation:"""
         context_parts = []
         current_length = 0
         
-        for i, review in enumerate(reviews):
-            review_text = f"Review {i+1}: {review}\n\n"
+        for review in reviews:
+            review_text = f"{review}\n\n"
             
             if current_length + len(review_text) <= max_length:
                 context_parts.append(review_text)
@@ -309,13 +321,13 @@ Recommendation:"""
                 remaining_space = max_length - current_length - 50  # Leave space for truncation message
                 if remaining_space > 100:  # Only truncate if we have reasonable space
                     truncated_review = review[:remaining_space] + "..."
-                    context_parts.append(f"Review {i+1}: {truncated_review}\n\n")
+                    context_parts.append(f"{truncated_review}\n\n")
                 break
         
         if not context_parts:
             # If no reviews fit, truncate the first one
             first_review = reviews[0][:max_length-50] + "..."
-            return f"Review 1: {first_review}"
+            return first_review
         
         return "".join(context_parts).strip()
     
@@ -331,11 +343,19 @@ Recommendation:"""
         """
         question_lower = question.lower()
         
-        # Keywords for different templates
-        analysis_keywords = ["analyze", "analysis", "detailed", "comprehensive", "deep dive"]
-        sentiment_keywords = ["sentiment", "opinion", "feel", "think", "overall", "general"]
-        comparison_keywords = ["compare", "comparison", "versus", "vs", "difference", "better"]
-        recommendation_keywords = ["recommend", "should i", "worth it", "buy", "purchase"]
+        # Keywords for different templates (English and Polish)
+        analysis_keywords = ["analyze", "analysis", "detailed", "comprehensive", "deep dive", 
+                            "analizuj", "analizować", "przeanalizuj", "przeanalizować", "analiza", 
+                            "szczegółowy", "kompleksowy", "dogłębny", "szczegółowo", "dokładnie"]
+        sentiment_keywords = ["sentiment", "opinion", "feel", "think", "overall", "general",
+                             "nastrój", "opinia", "czuć", "myśleć", "ogólnie", "generalnie", 
+                             "odczucia", "wrażenia", "odczuć", "wrażenie"]
+        comparison_keywords = ["compare", "comparison", "versus", "vs", "difference", "better",
+                              "porównaj", "porównać", "porównanie", "kontra", "różnica", "lepszy",
+                              "lepsze", "porównywać", "zestawić", "zestawienie"]
+        recommendation_keywords = ["recommend", "should i", "worth it", "buy", "purchase",
+                                  "polecam", "polecać", "polecasz", "czy powinienem", "czy warto", 
+                                  "kupić", "zakup", "rekomendacja", "rekomendować"]
         
         if any(keyword in question_lower for keyword in recommendation_keywords):
             return PromptTemplate.RECOMMENDATION
@@ -568,7 +588,7 @@ class ConversationManager:
     
     def __init__(self, config: Config):
         self.config = config
-        self.conversation_history: List[Dict[str, str]] = []
+        self.conversation_history: List[Dict[str, Any]] = []
         self.max_history_length = 10
     
     def add_exchange(self, question: str, answer: str) -> None:
@@ -609,7 +629,8 @@ class ConversationManager:
             reviews=context.reviews,
             question=context.question,
             app_name=context.app_name,
-            additional_context=additional_context
+            additional_context=additional_context,
+            language=context.language
         )
     
     def _format_conversation_history(self) -> str:

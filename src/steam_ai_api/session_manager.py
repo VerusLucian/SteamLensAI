@@ -7,8 +7,7 @@ import threading
 from typing import Dict, Optional, List, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass
-from enum import Enum
-import time
+
 
 from steam_ai.config import Config
 from steam_ai.steam_store_api import SteamStoreAPI
@@ -416,7 +415,7 @@ class APISessionManager:
         except Exception as e:
             raise Exception(f"Error processing reviews: {e}")
     
-    def _generate_answer_with_llm(self, llm_client: LLMClient, question: str, search_results: List[Dict]) -> Optional[str]:
+    def _generate_answer_with_llm(self, llm_client: LLMClient, question: str, search_results: List[Dict], language: str = "en") -> Optional[str]:
         """Generate answer using LLM client."""
         try:
             # Format context from search results
@@ -429,7 +428,8 @@ class APISessionManager:
             from steam_ai.llm_client import PromptContext
             context = PromptContext(
                 reviews=review_texts[:10],
-                question=question
+                question=question,
+                language=language
             )
             
             # Call the LLM client's generate_response method
@@ -455,24 +455,25 @@ class APISessionManager:
                 return None
             return session
     
-    async def ask_question(self, session_id: str, question: str) -> Tuple[bool, Optional[str], List[Dict], str]:
+    async def ask_question(self, session_id: str, question: str, language: str = "en") -> Tuple[bool, Optional[str], str]:
         """
         Ask a question about the game reviews.
         
         Args:
             session_id: Session identifier
             question: Question to ask
+            language: Language for the response (en/pl)
             
         Returns:
-            Tuple of (success, answer, sources, message)
+            Tuple of (success, answer, message)
         """
         try:
             session = self.get_session(session_id)
             if not session:
-                return False, None, [], "Session not found or expired"
+                return False, None, "Session not found or expired"
             
             if session.status != SessionStatus.READY:
-                return False, None, [], f"Session is not ready (status: {session.status.value})"
+                return False, None, f"Session is not ready (status: {session.status.value})"
             
             # Load session data if needed
             session_dir = os.path.join(self.config.save_dir, session.appid)
@@ -480,7 +481,7 @@ class APISessionManager:
             # Initialize components
             index_manager = FAISSIndexManager(self.config)
             if not index_manager.load_index(session.appid, session_dir):
-                return False, None, [], "Session index not found"
+                return False, None, "Session index not found"
             
             llm_client = LLMClient(self.config)
             
@@ -494,28 +495,25 @@ class APISessionManager:
             )
             
             if not search_results:
-                return False, None, [], "No relevant reviews found"
+                return False, None, "No relevant reviews found"
             
-            # Generate answer
+            # Generate answer with language parameter
             answer = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: self._generate_answer_with_llm(llm_client, question, search_results)
+                lambda: self._generate_answer_with_llm(llm_client, question, search_results, language)
             )
             
             if not answer:
-                return False, None, [], "Failed to generate answer"
-            
-            # Prepare sources (always include 3 sources)
-            sources = self._prepare_sources(search_results[:3])
+                return False, None, "Failed to generate answer"
             
             # Update session access time
             session.updated_at = datetime.now()
             
-            return True, answer, sources, "Question answered successfully"
+            return True, answer, "Question answered successfully"
         
         except Exception as e:
             logger.error(f"Error asking question: {e}")
-            return False, None, [], f"Error processing question: {str(e)}"
+            return False, None, f"Error processing question: {str(e)}"
     
     def _prepare_sources(self, search_results: List) -> List[Dict]:
         """Prepare source excerpts from search results."""

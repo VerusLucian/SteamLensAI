@@ -79,6 +79,7 @@ class SessionStatusResponse(BaseModel):
 class QuestionRequest(BaseModel):
     """Request model for asking questions."""
     question: str = Field(..., min_length=1, max_length=500, description="Question about the game")
+    language: str = Field(default="en", description="Language for the response (en/pl)")
 
     @validator('question')
     def validate_question(cls, v):
@@ -86,6 +87,13 @@ class QuestionRequest(BaseModel):
         if not v.strip():
             raise ValueError('Question cannot be empty or whitespace only')
         return v.strip()
+
+    @validator('language')
+    def validate_language(cls, v):
+        """Validate language parameter."""
+        if v.lower() not in ['en', 'pl']:
+            raise ValueError('Language must be either "en" or "pl"')
+        return v.lower()
 
 
 class ReviewSource(BaseModel):
@@ -103,7 +111,6 @@ class QuestionResponse(BaseModel):
     """Response model for questions."""
     success: bool = Field(..., description="Whether the question was processed successfully")
     answer: Optional[str] = Field(None, description="AI-generated answer")
-    sources: List[ReviewSource] = Field(default_factory=list, description="Source review excerpts")
     processing_time_seconds: float = Field(..., description="Time taken to process the question")
     session_id: str = Field(..., description="Session identifier")
     question: str = Field(..., description="Original question")

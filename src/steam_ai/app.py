@@ -10,7 +10,7 @@ from .steam_client import SteamReviewFetcher, ReviewProcessor
 from .embedding_service import EmbeddingManager
 from .index_manager import FAISSIndexManager
 from .llm_client import LLMClient, PromptContext
-from .session_manager import SessionManager
+from .session_manager import SessionManager, CompressionType
 from .i18n import TranslationManager
 from .steam_store_api import SteamStoreAPI, GameDetails
 
@@ -362,7 +362,8 @@ class SteamAIApp:
                 reviews=relevant_texts,
                 question=question,
                 app_name=self.current_app_name,
-                additional_context=additional_context
+                additional_context=additional_context,
+                language=self.config.app_language
             )
             
             # Show progress indicator
