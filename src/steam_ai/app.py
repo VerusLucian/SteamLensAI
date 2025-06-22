@@ -3,13 +3,14 @@ import sys
 import logging
 import time
 from typing import List, Optional
+from pathlib import Path
 
 from .config import Config
 from .steam_client import SteamReviewFetcher, ReviewProcessor
 from .embedding_service import EmbeddingManager
 from .index_manager import FAISSIndexManager
 from .llm_client import LLMClient, PromptContext
-from .session_manager import SessionManager, CompressionType
+from .session_manager import SessionManager
 from .i18n import TranslationManager
 from .steam_store_api import SteamStoreAPI, GameDetails
 
@@ -47,12 +48,17 @@ class SteamAIApp:
     def _setup_logging(self) -> None:
         """Setup logging configuration."""
         log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+        
+        # Create logs directory if it doesn't exist
+        logs_dir = Path('logs')
+        logs_dir.mkdir(exist_ok=True)
+        
         logging.basicConfig(
             level=getattr(logging, log_level),
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.StreamHandler(sys.stdout),
-                logging.FileHandler('steam_ai.log')
+                logging.FileHandler(logs_dir / 'steam_ai.log')
             ]
         )
         

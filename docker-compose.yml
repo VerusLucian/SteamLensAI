@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  steamlens-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sessions:/app/sessions
+      - ./.env:/app/.env:ro
+    environment:
+      - PYTHONPATH=/app/src
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_WORKERS=1
+      - OLLAMA_EMBED_URL=http://host.docker.internal:11434/api/embed
+      - OLLAMA_LLM_URL=http://host.docker.internal:11434/api/generate
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

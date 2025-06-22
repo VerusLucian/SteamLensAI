@@ -88,9 +88,10 @@ Install and start [Ollama](https://ollama.ai/), then download the required model
 ollama pull bge-m3
 
 # Download LLM model (choose based on your hardware)
-ollama pull deepseek-r1:14b        # Recommended (14B parameters)
-# OR for lower resource usage:
-ollama pull llama2:7b              # Alternative (7B parameters)
+ollama pull gemma2:12b             # Recommended (12B parameters)
+# OR for alternatives:
+ollama pull deepseek-r1:14b        # Alternative (14B parameters)
+ollama pull llama2:7b              # Lower resource usage (7B parameters)
 ```
 
 ### 3. Configure Environment (Optional)
@@ -117,7 +118,7 @@ REVIEW_MAX_LENGTH=1024            # Maximum review length
 
 # AI Models
 OLLAMA_EMBED_MODEL=bge-m3         # Embedding model name
-OLLAMA_LLM_MODEL=deepseek-r1:14b  # LLM model name
+OLLAMA_LLM_MODEL=gemma2:12b       # LLM model name
 
 # Performance
 EMBEDDING_BATCH_SIZE=10           # Batch size for embeddings
@@ -203,7 +204,7 @@ When using Polish, the LLM will respond in Polish with enhanced instructions to 
 | Model Type | Recommended | Alternative | Memory Usage |
 |------------|-------------|-------------|--------------|
 | Embedding | `bge-m3` | `all-minilm:l6-v2` | ~2GB |
-| LLM | `deepseek-r1:14b` | `llama2:7b` | ~8GB / ~4GB |
+| LLM | `gemma2:12b` | `deepseek-r1:14b`, `llama2:7b` | ~7GB / ~8GB / ~4GB |
 
 ## 🎯 Optimization Details
 
@@ -334,6 +335,12 @@ This project is not affiliated with Valve Corporation or Steam. It uses publicly
 - The gaming community for creating insightful reviews that make this tool valuable
 
 ## 📈 Version History
+
+### v2.1.0 - Performance & Configuration Update
+- **🚀 Default Model**: Changed default LLM model to `gemma2:12b` for better performance
+- **📁 Centralized Logging**: All logs now stored in `/logs` folder for better organization
+- **🔧 Configuration Cleanup**: Streamlined environment configuration files
+- **🧹 Code Cleanup**: Removed unnecessary test files and improved maintainability
 
 ### v2.0.0 - Major Feature Update
 - **🎮 Game Search by Name**: No more manual App ID lookup
