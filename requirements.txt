@@ -1,0 +1,6 @@
+requests==2.31.0
+numpy==1.26.2
+faiss-cpu==1.7.4
+tqdm==4.66.1
+python-dotenv==1.0.0
+aiohttp==3.9.1
