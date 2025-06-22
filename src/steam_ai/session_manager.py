@@ -413,10 +413,24 @@ class SessionManager:
             # Validate file sizes if available
             if metadata.file_sizes:
                 for filename, expected_size in metadata.file_sizes.items():
-                    # Find the actual file (might have different extension)
-                    actual_files = list(session_dir.glob(f"{filename}*"))
-                    if actual_files:
-                        actual_size = actual_files[0].stat().st_size
+                    # Map filename to actual file path based on compression type and file type
+                    if filename == "reviews":
+                        actual_file_path = session_dir / ("reviews.json.gz" if compression == CompressionType.GZIP else "reviews.json")
+                    elif filename == "texts":
+                        actual_file_path = session_dir / ("texts.txt.gz" if compression == CompressionType.GZIP else "texts.txt")
+                    elif filename == "embeddings":
+                        actual_file_path = session_dir / ("embeddings.npy.gz" if compression == CompressionType.GZIP else "embeddings.npy")
+                    elif filename == "index":
+                        actual_file_path = session_dir / "index.faiss"
+                    elif filename == "index_metadata":
+                        actual_file_path = session_dir / "index_metadata.json"
+                    else:
+                        # Fallback to original behavior for unknown files
+                        actual_files = list(session_dir.glob(f"{filename}*"))
+                        actual_file_path = actual_files[0] if actual_files else None
+                    
+                    if actual_file_path and actual_file_path.exists():
+                        actual_size = actual_file_path.stat().st_size
                         if abs(actual_size - expected_size) > expected_size * 0.1:  # 10% tolerance
                             logger.warning(f"File size mismatch for {filename}: expected {expected_size}, got {actual_size}")
                             return False

@@ -35,7 +35,7 @@ from .config import APIConfig
 from .models import (
     GameSearchRequest, GameSearchResponse, GameInfo,
     SessionInitRequest, SessionInitResponse, SessionStatusResponse,
-    QuestionRequest, QuestionResponse, ReviewSource,
+    QuestionRequest, QuestionResponse,
     HealthResponse, ErrorResponse, APIStatsResponse
 )
 from .session_manager import APISessionManager
@@ -360,33 +360,19 @@ async def ask_question(
         
         start_time = time.time()
         
-        # Ask question with default settings
-        success, answer, sources, message = await session_mgr.ask_question(
+        # Ask question with language parameter
+        success, answer, message = await session_mgr.ask_question(
             session_id,
-            question_request.question
+            question_request.question,
+            question_request.language
         )
         
         processing_time = time.time() - start_time
         
         if success:
-            # Convert sources to response model
-            review_sources = []
-            for source in sources:
-                review_source = ReviewSource(
-                    review_id=source.get("review_id", ""),
-                    author=source.get("author", ""),
-                    helpful_score=source.get("helpful_score", 0),
-                    playtime_hours=source.get("playtime_hours", 0),
-                    posted_date=source.get("posted_date", ""),
-                    excerpt=source.get("excerpt", ""),
-                    similarity_score=source.get("similarity_score", 0.0)
-                )
-                review_sources.append(review_source)
-            
             return QuestionResponse(
                 success=True,
                 answer=answer,
-                sources=review_sources,
                 processing_time_seconds=processing_time,
                 session_id=session_id,
                 question=question_request.question,
